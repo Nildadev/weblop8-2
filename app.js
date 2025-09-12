@@ -1,5 +1,6 @@
 ;(function(){
   const STORAGE_KEY = 'weblop82_students_v2'
+  const MY_RATINGS_KEY = 'weblop82_myRatings_v1'
 
   /**
    * @typedef {{ sum:number, count:number }} RatingStats
@@ -7,7 +8,25 @@
    */
 
   /** @type {Student[]} */
-  let students = load()
+  let students = []
+  /** @type {Record<string, number>} */
+  let myRatings = loadMyRatings()
+
+  const USE_REMOTE = Boolean(window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey)
+  let db = null
+  if(USE_REMOTE){
+    try{
+      const app = firebase.initializeApp(window.FIREBASE_CONFIG)
+      db = firebase.firestore(app)
+      subscribeRemote()
+    }catch(e){
+      console.warn('Firebase init failed, fallback to local', e)
+      students = load()
+      render()
+    }
+  }else{
+    students = load()
+  }
 
   const form = document.getElementById('student-form')
   const nameInput = document.getElementById('name')
@@ -51,8 +70,33 @@
     }
   }
 
+  function loadMyRatings(){
+    try{
+      const raw = localStorage.getItem(MY_RATINGS_KEY)
+      return raw ? JSON.parse(raw) : {}
+    }catch(e){ return {} }
+  }
+
+  function saveMyRatings(){
+    localStorage.setItem(MY_RATINGS_KEY, JSON.stringify(myRatings))
+  }
+
   function save(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(students))
+    if(!USE_REMOTE){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(students))
+    }
+  }
+
+  function subscribeRemote(){
+    db.collection('students').orderBy('name').onSnapshot(snap =>{
+      const list = []
+      snap.forEach(doc =>{
+        const d = doc.data() || {}
+        list.push({ id: doc.id, name: d.name || '', myRating: myRatings[doc.id] || 0, stats: { sum: d.sum || 0, count: d.count || 0 } })
+      })
+      students = list
+      render()
+    })
   }
 
   function render(list = students){
@@ -107,22 +151,32 @@
     return frag
   }
 
-  function setRating(id, rating){
+  async function setRating(id, rating){
     const s = students.find(s=>s.id===id)
     if(!s) return
     const prev = s.myRating || 0
-    if(!s.stats) s.stats = { sum: 0, count: 0 }
-    if(prev === 0){
-      // first vote from this device
-      s.stats.sum += rating
-      s.stats.count += 1
+    if(USE_REMOTE){
+      try{
+        await db.runTransaction(async t =>{
+          const ref = db.collection('students').doc(id)
+          const doc = await t.get(ref)
+          const d = doc.exists ? doc.data() : { sum:0, count:0, name: s.name }
+          let sum = d.sum || 0
+          let count = d.count || 0
+          if(prev === 0){ sum += rating; count += 1 } else { sum += (rating - prev) }
+          t.set(ref, { name: d.name || s.name, sum, count }, { merge: true })
+        })
+        myRatings[id] = rating
+        s.myRating = rating
+        saveMyRatings()
+      }catch(err){ console.error('rate failed', err) }
     }else{
-      // update existing vote
-      s.stats.sum += (rating - prev)
+      if(!s.stats) s.stats = { sum: 0, count: 0 }
+      if(prev === 0){ s.stats.sum += rating; s.stats.count += 1 } else { s.stats.sum += (rating - prev) }
+      s.myRating = rating
+      save()
+      render()
     }
-    s.myRating = rating
-    save()
-    render()
   }
 
   function getAverage(student){
@@ -141,9 +195,12 @@
   }
 
   function removeStudent(id){
-    students = students.filter(s=>s.id!==id)
-    save()
-    render()
+    if(USE_REMOTE){
+      db.collection('students').doc(id).delete().catch(console.error)
+    }else{
+      students = students.filter(s=>s.id!==id)
+      save(); render()
+    }
   }
 
   form.addEventListener('submit', function(e){
@@ -162,11 +219,19 @@
     if(editingId){
       const s = students.find(s=>s.id===editingId)
       if(s){
-        s.name = name
+        if(USE_REMOTE){
+          db.collection('students').doc(s.id).set({ name }, { merge: true })
+        }else{
+          s.name = name
+        }
       }
       editingId = null
     }else{
-      students.push({ id: uid(), name, myRating: 0, stats: { sum: 0, count: 0 } })
+      if(USE_REMOTE){
+        db.collection('students').add({ name, sum:0, count:0 }).catch(console.error)
+      }else{
+        students.push({ id: uid(), name, myRating: 0, stats: { sum: 0, count: 0 } })
+      }
     }
     save()
     form.reset()
@@ -176,7 +241,7 @@
   searchInput.addEventListener('input', ()=> render())
 
   // Seed sample if empty
-  if(students.length === 0){
+  if(!USE_REMOTE && students.length === 0){
     students = [
       { id: uid(), name: 'Nguyễn Văn An', myRating: 0, stats: { sum: 0, count: 0 } },
       { id: uid(), name: 'Trần Thị Bình', myRating: 0, stats: { sum: 0, count: 0 } },
