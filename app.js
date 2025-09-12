@@ -16,8 +16,8 @@
   let db = null
   if(USE_REMOTE){
     try{
-      const app = firebase.initializeApp(window.FIREBASE_CONFIG)
-      db = firebase.firestore(app)
+      firebase.initializeApp(window.FIREBASE_CONFIG)
+      db = firebase.firestore()
       subscribeRemote()
     }catch(e){
       console.warn('Firebase init failed, fallback to local', e)
