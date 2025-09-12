@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lớp 8/2 - Lớp em yêu</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="frame">
+    <header class="container">
+        <h1 class="headline-outline">Lớp 8/2</h1>
+        <p class="warning">⚠ TRANG WEB NÀY ĐƯỢC LÀM VỚI MỤC ĐÍCH HỌC TẬP VÀ KHÔNG CỔ XÚY CHO BẤT CỨ HÀNH ĐỘNG NÀO !</p>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <h2>Thêm học sinh</h2>
+            <form id="student-form">
+                <input type="text" id="name" placeholder="Tên học sinh" required>
+                <button type="submit">Thêm</button>
+            </form>
+        </section>
+
+        <section class="card">
+            <div class="toolbar">
+                <h2>Danh sách học sinh</h2>
+                <input type="search" id="search" placeholder="Tìm theo tên..." aria-label="Tìm học sinh">
+            </div>
+            <ul id="student-list" class="list"></ul>
+            <template id="student-item-template">
+                <li class="list-item">
+                    <div class="info">
+                        <span class="name"></span>
+                    </div>
+                    <div class="avg" aria-live="polite">
+                        <div class="avg-stars" title="Tim trung bình"></div>
+                        <div class="avg-text"><span class="avg-value">0.0</span> <small class="votes">(0 bình chọn)</small></div>
+                    </div>
+                    <div class="rating" role="radiogroup" aria-label="Đánh giá">
+                        <!-- stars rendered by JS -->
+                    </div>
+                    <div class="actions">
+                        <button class="edit">Sửa</button>
+                        <button class="delete danger">Xoá</button>
+                    </div>
+                </li>
+            </template>
+        </section>
+    </main>
+
+    <footer class="container muted">
+        <small>Made with ♥ by Phuc (Nildadev) |</small>
+        <small>Contact : nguyenphuc17122011@gmail.com |</small>
+        <small>Profile : <a href="https://guns.lol/nilthedev">Here</a></small>
+    </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
+
