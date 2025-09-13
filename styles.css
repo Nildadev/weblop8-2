@@ -263,7 +263,7 @@ button:disabled{opacity:.6;cursor:not-allowed}
 
 /* Admin features */
 .admin-only {
-  display: none;
+  display: block;
 }
 
 .admin-only.show {
@@ -281,6 +281,7 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .admin-mode .admin-btn::after {
   content: " ✓";
 }
+
 
 
 

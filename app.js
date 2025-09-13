@@ -126,10 +126,12 @@
     
     if(isAdminLoggedIn){
       body.classList.add('admin-mode')
-      adminBtn.textContent = 'Admin '
+      adminBtn.textContent = 'Admin'
+      console.log('Admin mode enabled')
     } else {
       body.classList.remove('admin-mode')
-      adminBtn.textContent = 'Admin'
+      adminBtn.textContent = 'Đăng nhập'
+      console.log('Admin mode disabled')
     }
     
     // Re-render to show/hide edit/delete buttons
@@ -319,12 +321,6 @@
     const name = nameInput.value.trim()
     if(!name) return
     
-    // Check admin permission for adding/editing students
-    if(!isAdminLoggedIn){
-      alert('Chỉ admin mới có thể thêm/sửa học sinh!')
-      return
-    }
-    
     // unique name check (case-insensitive, ignore accents & extra spaces)
     const norm = normalizeName(name)
     const hasDuplicate = students.some(s => normalizeName(s.name) === norm && s.id !== editingId)
@@ -362,7 +358,7 @@
   // Admin button event listener
   document.getElementById('admin-btn').addEventListener('click', function(){
     if(isAdminLoggedIn){
-      if(confirm('Bạn có muốn đăng xuất khỏi chế độ admin không?')){
+      if(confirm('Bạn có muốn đăng xuất không?')){
         logoutAdmin()
       }
     } else {
@@ -403,6 +399,9 @@
 
   // Check admin session on page load
   checkAdminSession()
+
+  // Ensure admin UI is updated on page load
+  updateAdminUI()
 
   render()
 })()
