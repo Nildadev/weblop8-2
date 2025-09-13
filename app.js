@@ -126,7 +126,7 @@
     
     if(isAdminLoggedIn){
       body.classList.add('admin-mode')
-      adminBtn.textContent = 'Admin ✓'
+      adminBtn.textContent = 'Admin '
     } else {
       body.classList.remove('admin-mode')
       adminBtn.textContent = 'Admin'
@@ -406,5 +406,6 @@
 
   render()
 })()
+
 
 
