@@ -1,6 +1,7 @@
 ;(function(){
   const STORAGE_KEY = 'weblop82_students_v2'
   const MY_RATINGS_KEY = 'weblop82_myRatings_v1'
+  const ADMIN_SESSION_KEY = 'weblop82_admin_session'
 
   /**
    * @typedef {{ sum:number, count:number }} RatingStats
@@ -11,6 +12,8 @@
   let students = []
   /** @type {Record<string, number>} */
   let myRatings = loadMyRatings()
+  /** @type {boolean} */
+  let isAdminLoggedIn = false
 
   const USE_REMOTE = Boolean(window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey)
   let db = null
@@ -81,6 +84,79 @@
     localStorage.setItem(MY_RATINGS_KEY, JSON.stringify(myRatings))
   }
 
+  // Admin authentication functions
+  function checkAdminSession(){
+    try{
+      const session = localStorage.getItem(ADMIN_SESSION_KEY)
+      if(session){
+        const { timestamp, username } = JSON.parse(session)
+        // Session expires after 24 hours
+        if(Date.now() - timestamp < 24 * 60 * 60 * 1000){
+          isAdminLoggedIn = true
+          updateAdminUI()
+          return true
+        } else {
+          localStorage.removeItem(ADMIN_SESSION_KEY)
+        }
+      }
+    }catch(e){
+      console.error('Admin session check failed', e)
+    }
+    return false
+  }
+
+  function saveAdminSession(username){
+    const session = {
+      username,
+      timestamp: Date.now()
+    }
+    localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session))
+  }
+
+  function logoutAdmin(){
+    isAdminLoggedIn = false
+    localStorage.removeItem(ADMIN_SESSION_KEY)
+    updateAdminUI()
+    hideModal()
+  }
+
+  function updateAdminUI(){
+    const body = document.body
+    const adminBtn = document.getElementById('admin-btn')
+    
+    if(isAdminLoggedIn){
+      body.classList.add('admin-mode')
+      adminBtn.textContent = 'Admin ✓'
+    } else {
+      body.classList.remove('admin-mode')
+      adminBtn.textContent = 'Admin'
+    }
+    
+    // Re-render to show/hide edit/delete buttons
+    render()
+  }
+
+  function showModal(){
+    const modal = document.getElementById('admin-modal')
+    modal.classList.add('show')
+    document.getElementById('admin-username').focus()
+  }
+
+  function hideModal(){
+    const modal = document.getElementById('admin-modal')
+    modal.classList.remove('show')
+    document.getElementById('admin-login-form').reset()
+  }
+
+  function authenticateAdmin(username, password){
+    // Simple hardcoded admin credentials (in production, use proper authentication)
+    const adminCredentials = {
+      'admin': 'admin123',
+    }
+    
+    return adminCredentials[username] === password
+  }
+
   function save(){
     if(!USE_REMOTE){
       localStorage.setItem(STORAGE_KEY, JSON.stringify(students))
@@ -103,6 +179,20 @@
     const q = (searchInput.value || '').toLowerCase().trim()
     const filtered = q ? list.filter(s => s.name.toLowerCase().includes(q)) : list
     listEl.innerHTML = ''
+    
+    if(filtered.length === 0){
+      const emptyMsg = document.createElement('li')
+      emptyMsg.className = 'empty-message'
+      emptyMsg.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #666;">
+          <p>${q ? 'Không tìm thấy học sinh nào' : 'Chưa có học sinh nào trong danh sách'}</p>
+          ${!isAdminLoggedIn ? '<p><small>Admin cần đăng nhập để thêm học sinh</small></p>' : ''}
+        </div>
+      `
+      listEl.appendChild(emptyMsg)
+      return
+    }
+    
     filtered
       .slice()
       .sort((a,b)=> a.name.localeCompare(b.name, 'vi'))
@@ -130,8 +220,20 @@
     const ratingEl = li.querySelector('.rating')
     ratingEl.appendChild(buildStars(student))
 
-    li.querySelector('.edit').addEventListener('click', ()=> startEdit(student))
-    li.querySelector('.delete').addEventListener('click', ()=> removeStudent(student.id))
+    // Only show edit/delete buttons for admin
+    const editBtn = li.querySelector('.edit')
+    const deleteBtn = li.querySelector('.delete')
+    
+    if(isAdminLoggedIn){
+      editBtn.style.display = 'block'
+      deleteBtn.style.display = 'block'
+      editBtn.addEventListener('click', ()=> startEdit(student))
+      deleteBtn.addEventListener('click', ()=> removeStudent(student.id))
+    } else {
+      editBtn.style.display = 'none'
+      deleteBtn.style.display = 'none'
+    }
+    
     return li
   }
 
@@ -189,12 +291,21 @@
   }
 
   function startEdit(student){
+    if(!isAdminLoggedIn){
+      alert('Chỉ admin mới có thể sửa thông tin học sinh!')
+      return
+    }
     editingId = student.id
     nameInput.value = student.name
     nameInput.focus()
   }
 
   function removeStudent(id){
+    if(!isAdminLoggedIn){
+      alert('Chỉ admin mới có thể xóa học sinh!')
+      return
+    }
+    
     if(USE_REMOTE){
       db.collection('students').doc(id).delete().catch(console.error)
     }else{
@@ -207,6 +318,13 @@
     e.preventDefault()
     const name = nameInput.value.trim()
     if(!name) return
+    
+    // Check admin permission for adding/editing students
+    if(!isAdminLoggedIn){
+      alert('Chỉ admin mới có thể thêm/sửa học sinh!')
+      return
+    }
+    
     // unique name check (case-insensitive, ignore accents & extra spaces)
     const norm = normalizeName(name)
     const hasDuplicate = students.some(s => normalizeName(s.name) === norm && s.id !== editingId)
@@ -240,15 +358,51 @@
 
   searchInput.addEventListener('input', ()=> render())
 
-  // Seed sample if empty
-  if(!USE_REMOTE && students.length === 0){
-    students = [
-      { id: uid(), name: 'Nguyễn Văn An', myRating: 0, stats: { sum: 0, count: 0 } },
-      { id: uid(), name: 'Trần Thị Bình', myRating: 0, stats: { sum: 0, count: 0 } },
-      { id: uid(), name: 'Phạm Gia Huy', myRating: 0, stats: { sum: 0, count: 0 } }
-    ]
-    save()
-  }
+
+  // Admin button event listener
+  document.getElementById('admin-btn').addEventListener('click', function(){
+    if(isAdminLoggedIn){
+      if(confirm('Bạn có muốn đăng xuất khỏi chế độ admin không?')){
+        logoutAdmin()
+      }
+    } else {
+      showModal()
+    }
+  })
+
+  // Modal event listeners
+  document.getElementById('close-modal').addEventListener('click', hideModal)
+  document.getElementById('cancel-login').addEventListener('click', hideModal)
+  
+  // Close modal when clicking outside
+  document.getElementById('admin-modal').addEventListener('click', function(e){
+    if(e.target === this){
+      hideModal()
+    }
+  })
+
+  // Admin login form
+  document.getElementById('admin-login-form').addEventListener('submit', function(e){
+    e.preventDefault()
+    const username = document.getElementById('admin-username').value.trim()
+    const password = document.getElementById('admin-password').value
+
+    if(authenticateAdmin(username, password)){
+      isAdminLoggedIn = true
+      saveAdminSession(username)
+      updateAdminUI()
+      hideModal()
+      alert(`Chào mừng ${username}!`)
+    } else {
+      alert('Tên đăng nhập hoặc mật khẩu không đúng!')
+      document.getElementById('admin-password').value = ''
+      document.getElementById('admin-username').focus()
+    }
+  })
+
+
+  // Check admin session on page load
+  checkAdminSession()
 
   render()
 })()

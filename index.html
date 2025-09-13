@@ -9,12 +9,15 @@
 <body>
     <div class="frame">
     <header class="container">
-        <h1 class="headline-outline">Lớp 8/2</h1>
+        <div class="header-content">
+            <h1 class="headline-outline">Lớp 8/2</h1>
+            <button id="admin-btn" class="admin-btn">Đăng Nhập</button>
+        </div>
         <p class="warning">⚠ TRANG WEB NÀY ĐƯỢC LÀM VỚI MỤC ĐÍCH HỌC TẬP VÀ KHÔNG CỔ XÚY CHO BẤT CỨ HÀNH ĐỘNG NÀO !</p>
     </header>
 
     <main class="container">
-        <section class="card">
+        <section class="card admin-only">
             <h2>Thêm học sinh</h2>
             <form id="student-form">
                 <input type="text" id="name" placeholder="Tên học sinh" required>
@@ -54,6 +57,30 @@
         <small>Contact : nguyenphuc17122011@gmail.com |</small>
         <small>Profile : <a href="https://guns.lol/nilthedev">Here</a></small>
     </footer>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="admin-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Đăng nhập</h2>
+                <button id="close-modal" class="close-btn">&times;</button>
+            </div>
+            <form id="admin-login-form">
+                <div class="form-group">
+                    <label for="admin-username">Tên đăng nhập:</label>
+                    <input type="text" id="admin-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Mật khẩu:</label>
+                    <input type="password" id="admin-password" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="login-btn">Đăng nhập</button>
+                    <button type="button" id="cancel-login" class="cancel-btn">Hủy</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="config.js"></script>

@@ -1,5 +1,5 @@
 :root{
-  --bg:#1f0a1f;--surface:#2a0f2a;--border:#4a1f4a;--text:#ffe9f2;--muted:#d8a7c9;--primary:#ff5ca8;--danger:#ff477e;--ok:#ff94c2
+  --bg:#1f0a1f;--surface:#2a0f2a;--border:#4a1f4a;--text:#ffd2d2;--muted:#d8a7c9;--primary:#ff5ca8;--danger:#ff477e;--ok:#ff94c2
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -74,5 +74,213 @@ button:disabled{opacity:.6;cursor:not-allowed}
 /* Card entrance animation */
 .list-item{animation:fadeIn .3s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Header content layout */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* Admin button */
+.admin-btn {
+  background: #ff5ca8;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 92, 168, 0.3);
+  transition: all 0.3s ease;
+}
+
+.admin-btn:hover {
+  background: #ff4a9c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 92, 168, 0.4);
+}
+
+.admin-btn:active {
+  transform: translateY(0);
+}
+
+/* Modal styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.modal.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #fff4ff;
+  border: 1px solid #1d1c1da4;
+  border-radius: 16px;
+  padding: 0;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #ebd1eb;
+  background: linear-gradient(135deg, #ff5ca8, #ff94c2);
+  color: white;
+  border-radius: 16px 16px 0 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Form styles */
+#admin-login-form {
+  padding: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #1d1d1dde;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #f8f8f8;
+  border: 1px solid #4a1f4a;
+  color: #1d1d1dde;
+  border-radius: 10px;
+  font-size: 16px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.form-group input::placeholder {
+  color: #d8a7c9;
+}
+
+.form-group input:focus {
+  border-color: #ff5ca8;
+  box-shadow: 0 0 0 3px rgba(255, 92, 168, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.login-btn {
+  background: #ff5ca8;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+  background: #ff4a9c;
+  transform: translateY(-1px);
+}
+
+.cancel-btn {
+  background: #f5f5f5;
+  color: #666;
+  border: 2px solid #e0e0e0;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background: #e0e0e0;
+  border-color: #ccc;
+}
+
+/* Admin features */
+.admin-only {
+  display: none;
+}
+
+.admin-only.show {
+  display: block;
+}
+
+.admin-mode .admin-only {
+  display: block;
+}
+
+.admin-mode .admin-btn {
+  background: #28a745;
+}
+
+.admin-mode .admin-btn::after {
+  content: " ✓";
+}
+
 
 
