@@ -1,12 +1,10 @@
-// Fill these from your Firebase project settings
-// https://console.firebase.google.com → Project settings → Your apps (Web)
+// Cấu hình Firebase mới của bạn
 window.FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBZuoTcWawJBuG-XiRE3t30-FBX5f-LEqA",
-  authDomain: "weblop8-2.firebaseapp.com",
-  projectId: "weblop8-2",
-  storageBucket: "weblop8-2.firebasestorage.app",
-  messagingSenderId: "116817407457",
-  appId: "1:116817407457:web:28a664811428e70025f6a0"
-}
-
-
+  apiKey: "AIzaSyDXQb-n_eXe4gtIM2CBoxE9WZgHOL0eG30",
+  authDomain: "weblop82-3583e.firebaseapp.com",
+  projectId: "weblop82-3583e",
+  storageBucket: "weblop82-3583e.firebasestorage.app",
+  messagingSenderId: "584779545918",
+  appId: "1:584779545918:web:47e1b03394a425d773c06f",
+  measurementId: "G-ZME2P8XYBZ"
+};

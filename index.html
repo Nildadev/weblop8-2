@@ -5,57 +5,116 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Lớp 8/2 - Lớp em yêu</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
-<body>
+<body class="theme-pink">
+    <div class="theme-controls">
+        <button id="theme-toggle" title="Đổi màu giao diện">✨</button>
+    </div>
+
+    <div id="toast-container"></div>
+
     <div class="frame">
     <header class="container">
         <div class="header-content">
             <h1 class="headline-outline">Lớp 8/2</h1>
-            <button id="admin-btn" class="admin-btn">Đăng Nhập</button>
         </div>
         <p class="warning">⚠ TRANG WEB NÀY ĐƯỢC LÀM VỚI MỤC ĐÍCH HỌC TẬP VÀ KHÔNG CỔ XÚY CHO BẤT CỨ HÀNH ĐỘNG NÀO !</p>
     </header>
 
-    <main class="container">
-        <section class="card">
-            <h2>Thêm học sinh</h2>
-            <form id="student-form">
-                <input type="text" id="name" placeholder="Tên học sinh" required>
-                <button type="submit">Thêm</button>
-            </form>
-        </section>
+    <main class="container main-grid">
+        <div class="left-column">
+            <section class="card admin-only" id="admin-section">
+                <h2>Thêm học sinh</h2>
+                <form id="student-form">
+                    <div class="input-group">
+                        <input type="text" id="name" placeholder="Tên học sinh" required>
+                        <input type="date" id="birthday" title="Ngày sinh nhật">
+                    </div>
+                    <div class="input-group">
+                        <select id="group-select">
+                            <option value="1">Tổ 1</option>
+                            <option value="2">Tổ 2</option>
+                            <option value="3">Tổ 3</option>
+                            <option value="4">Tổ 4</option>
+                        </select>
+                        <button type="submit">Thêm vào lớp</button>
+                    </div>
+                </form>
+            </section>
 
-        <section class="card">
-            <div class="toolbar">
-                <h2>Danh sách học sinh</h2>
-                <input type="search" id="search" placeholder="Tìm theo tên..." aria-label="Tìm học sinh">
-            </div>
-            <ul id="student-list" class="list"></ul>
-            <template id="student-item-template">
-                <li class="list-item">
-                    <div class="info">
-                        <span class="name"></span>
+            <section class="card leaderboard-card">
+                <h2>🏆 Bảng Xếp Hạng Tim</h2>
+                <ol id="leaderboard-list" class="leaderboard-list"></ol>
+            </section>
+        </div>
+
+        <div class="right-column">
+            <section class="card">
+                <div class="toolbar">
+                    <h2>Danh sách lớp</h2>
+                    <div class="filters">
+                        <input type="search" id="search" placeholder="Tìm tên..." aria-label="Tìm học sinh">
+                        <select id="sort-select">
+                            <option value="name-asc">Tên A-Z</option>
+                            <option value="rating-desc">Nhiều tim nhất</option>
+                            <option value="votes-desc">Nhiều bình chọn</option>
+                            <option value="birthday">Sắp sinh nhật</option>
+                        </select>
                     </div>
-                    <div class="avg" aria-live="polite">
-                        <div class="avg-stars" title="Tim trung bình"></div>
-                        <div class="avg-text"><span class="avg-value">0.0</span> <small class="votes">(0 bình chọn)</small></div>
-                    </div>
-                    <div class="rating" role="radiogroup" aria-label="Đánh giá">
-                        <!-- stars rendered by JS -->
-                    </div>
-                    <div class="actions">
-                        <button class="edit">Sửa</button>
-                        <button class="delete danger">Xoá</button>
-                    </div>
-                </li>
-            </template>
-        </section>
+                </div>
+                <ul id="student-list" class="list"></ul>
+                <template id="student-item-template">
+                    <li class="list-item">
+                        <div class="info">
+                            <span class="group-badge"></span>
+                            <span class="name"></span>
+                            <div class="bday-tag"></div>
+                        </div>
+                        <div class="avg" aria-live="polite">
+                            <div class="avg-stars" title="Tim trung bình"></div>
+                            <div class="avg-text"><span class="avg-value">0.0</span> <small class="votes">(0)</small></div>
+                        </div>
+                        <div class="rating-area">
+                            <div class="rating" role="radiogroup"></div>
+                            <button class="msg-btn">💬 Lời nhắn</button>
+                        </div>
+                        <div class="actions">
+                            <button class="edit">Sửa</button>
+                            <button class="delete danger">Xoá</button>
+                        </div>
+                    </li>
+                </template>
+            </section>
+        </div>
     </main>
 
-    <footer class="container muted">
-        <small>Made with ♥ by Phuc (Nildadev) |</small>
-        <small>Contact : nguyenphuc17122011@gmail.com |</small>
-        <small>Profile : <a href="https://guns.lol/nilthedev">Here</a></small>
+    <!-- Comment Modal -->
+    <div id="comment-modal" class="modal">
+        <div class="modal-content comment-content">
+            <div class="modal-header">
+                <h2 id="comment-target-name">Lời nhắn cho...</h2>
+                <button class="close-btn" id="close-comment">&times;</button>
+            </div>
+            <div id="comment-list" class="comment-list">
+                <!-- Comments here -->
+            </div>
+            <form id="comment-form" class="comment-form">
+                <input type="text" id="comment-input" placeholder="Gửi lời nhắn yêu thương..." required>
+                <button type="submit">Gửi</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="container muted" style="text-align: center; border-top: 1px solid var(--border); margin-top: 40px; padding-top: 20px;">
+        <p>
+            <small>Made with ♥ by Phuc (Nildadev) |</small>
+            <small>Contact : nguyenphuc17122011@gmail.com |</small>
+            <small>Profile : <a href="https://guns.lol/nilthedev" target="_blank">Here</a></small>
+        </p>
+        <p>
+            <small id="admin-btn" style="cursor: pointer; opacity: 0.5;">© 2026 Quản trị viên</small>
+        </p>
     </footer>
     </div>
 
