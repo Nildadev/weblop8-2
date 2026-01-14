@@ -4,6 +4,26 @@
   const ADMIN_SESSION_KEY = 'weblop82_admin_session'
   const THEME_KEY = 'weblop82_theme'
 
+  // Helper functions defined early to avoid hoisting issues
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      return raw ? JSON.parse(raw) : []
+    } catch(e) { return [] }
+  }
+
+  function loadMyRatings() {
+    try {
+      const raw = localStorage.getItem(MY_RATINGS_KEY)
+      return raw ? JSON.parse(raw) : {}
+    } catch(e) { return {} }
+  }
+
+  function saveLocal() {
+    if(!USE_REMOTE) localStorage.setItem(STORAGE_KEY, JSON.stringify(students))
+    localStorage.setItem(MY_RATINGS_KEY, JSON.stringify(myRatings))
+  }
+
   let students = []
   let comments = {} // { studentId: [text, ...] }
   let myRatings = loadMyRatings()
@@ -187,6 +207,46 @@
     return li
   }
 
+  // --- UI Helpers ---
+
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container')
+    const toast = document.createElement('div')
+    toast.className = `toast ${type}`
+    toast.textContent = message
+    container.appendChild(toast)
+    setTimeout(() => {
+      toast.style.opacity = '0'
+      toast.style.transform = 'translateX(-20px)'
+      setTimeout(() => toast.remove(), 300)
+    }, 3000)
+  }
+
+  function triggerConfetti() {
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#ff4d94', '#ff70a6', '#ff99c2', '#ffc2d1']
+      })
+    }
+  }
+
+  function applyTheme(theme) {
+    document.body.className = theme
+    localStorage.setItem(THEME_KEY, theme)
+    currentTheme = theme
+  }
+
+  themeToggle.addEventListener('click', () => {
+    const themes = ['theme-pink', 'theme-blue', 'theme-dark']
+    let idx = themes.indexOf(currentTheme)
+    const nextTheme = themes[(idx + 1) % themes.length]
+    applyTheme(nextTheme)
+    showToast(`Giao diện: ${nextTheme.replace('theme-', '').toUpperCase()}`)
+  })
+
   // --- Existing Logic Updates ---
 
   function subscribeRemote() {
@@ -205,6 +265,65 @@
       })
       students = list
       render()
+    })
+  }
+
+  function getAverage(student) {
+    if (!student.stats || student.stats.count === 0) return 0
+    return student.stats.sum / student.stats.count
+  }
+
+  async function setRating(id, rating) {
+    const s = students.find(s => s.id === id)
+    if(!s) return
+    const prev = s.myRating || 0
+    if(prev === rating) return
+
+    if(rating === 5) triggerConfetti()
+
+    if(USE_REMOTE) {
+      try {
+        await db.runTransaction(async t => {
+          const ref = db.collection('students').doc(id)
+          const doc = await t.get(ref)
+          const d = doc.data()
+          let sum = d.sum || 0, count = d.count || 0
+          if(prev === 0) { sum += rating; count += 1 } else { sum += (rating - prev) }
+          t.update(ref, { sum, count })
+        })
+        myRatings[id] = rating
+        saveLocal()
+        showToast(`Đã tặng ${rating} tim cho ${s.name}!`, 'success')
+      } catch(e) { 
+        console.error(e)
+        showToast('Lỗi khi lưu đánh giá', 'danger') 
+      }
+    } else {
+      if(!s.stats) s.stats = { sum:0, count:0 }
+      if(prev === 0) { s.stats.sum += rating; s.stats.count += 1 } else { s.stats.sum += (rating - prev) }
+      s.myRating = rating
+      myRatings[id] = rating
+      saveLocal(); render()
+      showToast(`Đã lưu đánh giá cho ${s.name}!`)
+    }
+  }
+
+  function renderLeaderboard() {
+    const top = [...students]
+      .filter(s => (s.stats?.count || 0) > 0)
+      .sort((a, b) => getAverage(b) - getAverage(a))
+      .slice(0, 5)
+
+    leaderboardEl.innerHTML = top.length ? '' : '<p class="muted" style="text-align:center">Chưa có dữ liệu</p>'
+    top.forEach((s, i) => {
+      const item = document.createElement('li')
+      item.className = 'leaderboard-item'
+      item.innerHTML = `
+        <span class="leaderboard-rank">${i + 1}</span>
+        <span class="name">${s.name}</span>
+        <span class="avg-value" style="margin-left:auto; font-weight:bold">${getAverage(s).toFixed(1)} ❤</span>
+      `
+      leaderboardEl.appendChild(item)
     })
   }
 
@@ -262,8 +381,52 @@
 
   // --- Admin Logic ---
 
+  const adminModal = document.getElementById('admin-modal')
+  const adminForm = document.getElementById('admin-login-form')
+  const adminUser = document.getElementById('admin-username')
+  const adminPass = document.getElementById('admin-password')
+
+  function showAdminModal() {
+    adminModal.classList.add('show')
+    adminUser.focus()
+  }
+
+  function hideAdminModal() {
+    adminModal.classList.remove('show')
+    adminForm.reset()
+  }
+
+  document.getElementById('close-modal').onclick = hideAdminModal
+  document.getElementById('cancel-login').onclick = hideAdminModal
+  adminModal.onclick = (e) => { if(e.target === adminModal) hideAdminModal() }
+
+  adminForm.onsubmit = (e) => {
+    e.preventDefault()
+    const user = adminUser.value.trim()
+    const pass = adminPass.value
+    
+    // Simple logic (nên dùng Firebase Auth để bảo mật thực sự)
+    if(user === 'admin' && pass === 'admin123') {
+      isAdminLoggedIn = true
+      sessionStorage.setItem(ADMIN_SESSION_KEY, 'true')
+      updateAdminUI()
+      render()
+      hideAdminModal()
+      showToast('Chào mừng Admin!', 'success')
+    } else {
+      showToast('Sai tài khoản hoặc mật khẩu!', 'danger')
+      adminPass.value = ''
+      adminUser.focus()
+    }
+  }
+
   function checkAdmin() {
-    const session = localStorage.getItem(ADMIN_SESSION_KEY)
+    // Clear old localStorage session if exists (fix for previous version)
+    if(localStorage.getItem(ADMIN_SESSION_KEY)) {
+      localStorage.removeItem(ADMIN_SESSION_KEY)
+    }
+    
+    const session = sessionStorage.getItem(ADMIN_SESSION_KEY)
     if(session) isAdminLoggedIn = true
     updateAdminUI()
   }
@@ -286,24 +449,13 @@
     if(isAdminLoggedIn) {
       if(confirm('Bạn muốn đăng xuất?')) {
         isAdminLoggedIn = false
-        localStorage.removeItem(ADMIN_SESSION_KEY)
+        sessionStorage.removeItem(ADMIN_SESSION_KEY)
         updateAdminUI()
         render()
         showToast('Đã đăng xuất!')
       }
     } else {
-      const user = prompt('Tên đăng nhập:')
-      const pass = prompt('Mật khẩu:')
-      // Simple logic (nên dùng Firebase Auth để bảo mật thực sự)
-      if(user === 'admin' && pass === 'admin123') {
-        isAdminLoggedIn = true
-        localStorage.setItem(ADMIN_SESSION_KEY, 'true')
-        updateAdminUI()
-        render()
-        showToast('Chào mừng Admin!', 'success')
-      } else {
-        showToast('Sai tài khoản hoặc mật khẩu!', 'danger')
-      }
+      showAdminModal()
     }
   }
 
